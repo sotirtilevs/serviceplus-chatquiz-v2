@@ -2029,18 +2029,18 @@
 
       // Build the lead payload as a plain JSON object per the integration doc.
       const leadPayload = {
-        FirstName: first,
-        LastName: last,
-        Email: contact.email,
-        CellPhone: contact.phone,
-        Zipcode: zip,
+        firstname: first,
+        lastname: last,
+        email: contact.email,
+        cellphone: contact.phone,
+        zipcode: zip,
         // TrackingURL field carries the TrustedForm cert URL per the integration doc.
-        TrackingURL: trustedFormCert,
-        FormID: SERVICEPLUS_CONFIG.formID,
+        trackingURL: trustedFormCert,
+        formid: SERVICEPLUS_CONFIG.formID,
         // IP is optional; the server can fill it from the request if left blank.
         IP: '',
-        Meta_ClickID: metaClickID,
-        Utm_parameters: collectUtmParameters()
+        meta_clickid: metaClickID,
+        utm_parameters: collectUtmParameters()
       };
 
       fetch(SERVICEPLUS_CONFIG.postUrl, {
