@@ -1984,23 +1984,13 @@
     window.location.href = url;
   }
 
-  // ========= LEAD POSTING TO SERVICEPLUS CRM =========
-  //
-  // IMPORTANT / SECURITY NOTE:
-  // The integration doc states the APIKey should NOT be exposed on the client
-  // side. This front-end implementation is a demo scaffold; in production this
-  // POST should be proxied through your own backend (or a serverless function)
-  // that injects the APIKey server-side. The SERVICEPLUS_POST_URL below can be
-  // pointed at your proxy endpoint, which would then forward to
-  // https://process.serviceplus.com/NEWAPI/social_postlead.php with the APIKey
-  // attached.
-  //
+    // ========= LEAD POSTING TO SERVICEPLUS CRM =========
+  // Posts go through our Cloudflare Worker proxy, which injects the APIKey
+  // server-side from an encrypted env var. The APIKey is never present in
+  // this file or in any browser-visible payload.
   const SERVICEPLUS_CONFIG = {
-    // Swap this to your server-side proxy in production.
-    postUrl: 'https://process.serviceplus.com/NEWAPI/social_postlead.php',
-    formID: '1335',
-    // DEMO ONLY - move this to the server before launch.
-    apiKey: 'REPLACE_WITH_SERVER_SIDE_KEY'
+    postUrl: 'https://my-worker.sotirtilevs.workers.dev',
+    formID: '1335'
   };
 
   // Split "Jane Doe Smith" into first name + last name (rest joined as last).
