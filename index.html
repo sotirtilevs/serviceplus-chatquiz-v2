@@ -1972,9 +1972,10 @@
     const redirectBase = 'https://www.serviceplus.com/plans'; // TODO: confirm final thank-you / plans URL with client
     const qs = new URLSearchParams();
     if (leadID) qs.set('leadID', leadID);
-    // Forward any UTM / EF params that came in on the landing page
+    // Forward any UTM / EF / Meta params that came in on the landing page
     const incoming = new URLSearchParams(window.location.search);
     ['utm_source','utm_medium','utm_campaign','utm_term','utm_content',
+     'fbclid','meta_click_id',
      'oid','affid','source_id','sub1','sub2','sub3','sub4','sub5','uid',
      '_ef_transaction_id'].forEach(k => {
       const v = incoming.get(k);
