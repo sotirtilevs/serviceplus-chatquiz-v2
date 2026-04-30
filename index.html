@@ -1978,7 +1978,7 @@
     const leadID = state.answers && state.answers.leadID;
     const redirectBase = 'https://www.sphwpromo.com/quote/plan';
     const qs = new URLSearchParams();
-    if (leadID) qs.set('tarpID', leadID);
+    if (leadID) qs.set('tarpID', btoa(String(leadID)));
     qs.set('cp', 'SP40');
     const incoming = new URLSearchParams(window.location.search);
     ['utm_source','utm_medium','utm_campaign','utm_term','utm_content',
