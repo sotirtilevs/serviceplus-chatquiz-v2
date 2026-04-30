@@ -2056,16 +2056,15 @@
             return reject(new Error('HTTP ' + status + ': ' + text));
           }
           // Try to parse as JSON; fall back to raw text if the API returns plain text.
-          let leadID = '';
+        let leadID = '';
           try {
             const data = JSON.parse(text);
-            leadID = data.leadID || data.LeadID || data.lead_id || data.id || '';
-          } catch (_) {
-            // Some lead-post endpoints return the ID as a bare string.
-            leadID = (text || '').trim();
+            leadID = data.LeadID || '';
+          } catch (e) {
+            console.warn('ServicePlus returned non-JSON response:', text);
           }
           if (!leadID) {
-            console.warn('ServicePlus responded without a leadID. Raw:', text);
+            console.warn('ServicePlus responded without a LeadID. Raw:', text);
           }
           resolve(leadID);
         })
