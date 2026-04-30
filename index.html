@@ -2020,7 +2020,8 @@
       const zip = (state.answers && state.answers.zip) || '';
       const trustedFormCertEl = document.getElementById('xxTrustedFormToken_0');
       const trustedFormCert = trustedFormCertEl ? trustedFormCertEl.value : '';
-      const metaClickID = getUrlParam('fbclid') || getUrlParam('meta_click_id') || '';
+      const metaClickID = getUrlParam('fbclid') || getUrlParam('meta_click_id') || getUrlParam('fbadid') || ''; 
+	  
 
       // Build the lead payload as a plain JSON object per the integration doc.
       const leadPayload = {
