@@ -1661,6 +1661,15 @@
 
     // Render proof pane
     renderProof(q.proof);
+
+    // If the new options aren't visible in the viewport, reveal them
+    requestAnimationFrame(() => {
+      const rect = optionsEl.getBoundingClientRect();
+      const viewportH = window.innerHeight || document.documentElement.clientHeight;
+      if (rect.top < 0 || rect.bottom > viewportH) {
+        optionsEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
   }
 
   function renderChoices(q) {
