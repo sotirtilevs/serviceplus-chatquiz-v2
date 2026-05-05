@@ -56,52 +56,6 @@
 /></noscript>
 <!-- End Meta Pixel Code -->
 
-<!-- ========== FORM-SUBMIT SHIELD ==========
-     This page uses fetch() for lead posting — no native <form> submission
-     should ever happen. TrustedForm's async script injects <form> wrappers
-     and hidden inputs; if a native submit fires (Enter key, implicit
-     submit, etc.) the browser serializes those fields as GET params and
-     reloads the page, breaking the quiz. This shield blocks that globally.
-     ========================================== -->
-<script>
-(function() {
-  // 1. Block every native form submission at the capture phase
-  document.addEventListener('submit', function(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    return false;
-  }, true);
-
-  // 2. Watch for any <form> elements TrustedForm (or anything else)
-  //    injects into the DOM and neuter them so they can never submit.
-  var observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(m) {
-      m.addedNodes.forEach(function(node) {
-        if (node.nodeType === 1) {
-          // If the added node IS a <form>, neuter it
-          if (node.tagName === 'FORM') {
-            node.addEventListener('submit', function(e) {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-            }, true);
-          }
-          // If the added node CONTAINS <form> children, neuter those too
-          if (node.querySelectorAll) {
-            node.querySelectorAll('form').forEach(function(f) {
-              f.addEventListener('submit', function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-              }, true);
-            });
-          }
-        }
-      });
-    });
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-})();
-</script>
-
 <style>
   :root {
     --navy: #091b4a;
@@ -405,6 +359,8 @@
     box-shadow: 0 6px 16px rgba(251,170,26,0.3);
   }
   .btn-full { width: 100%; padding: 15px 20px; font-size: 15px; }
+  .btn-full:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-full:disabled:hover { background: var(--yellow); transform: none; box-shadow: none; }
   .btn-secondary {
     background: transparent;
     color: var(--white);
@@ -1822,28 +1778,26 @@
       const form = document.createElement('div');
       form.innerHTML = `
         <!-- TrustedForm hidden field - auto-populated by trustedform.js -->
+       <form>
         <div class="field">
           <label>Full Name</label>
           <input id="fld-name" type="text" placeholder="Your name"/>
-          <div id="name-error" style="display:none; color: var(--red); font-size: 12px; margin-top: 6px; font-weight: 500;"></div>
         </div>
         <div class="field">
           <label>Email</label>
           <input id="fld-email" type="email" placeholder="you@example.com"/>
-          <div id="email-error" style="display:none; color: var(--red); font-size: 12px; margin-top: 6px; font-weight: 500;"></div>
         </div>
         <div class="field">
           <label>Phone</label>
           <input id="fld-phone" type="tel" placeholder="(555) 555-5555" inputmode="numeric" autocomplete="tel-national" maxlength="14"/>
-          <div id="phone-error" style="display:none; color: var(--red); font-size: 12px; margin-top: 6px; font-weight: 500;"></div>
         </div>
-        <button type="button" class="btn btn-full" id="submit-contact">
+        <button class="btn btn-full" id="submit-contact" disabled>
           See My Risk Report
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-left:4px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
         <div class="security-note legal-note">
           By submitting this form, you confirm you&rsquo;ve read and agree to the <a href="https://www.serviceplus.com/terms" target="_blank" rel="noopener">Terms &amp; Conditions</a> and <a href="https://www.serviceplus.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>, including mandatory arbitration and a class action waiver. You consent to receive marketing emails, calls, and texts from ServicePlus and its <a href="https://www.serviceplus.com/terms-marketing-partners" target="_blank" rel="noopener">Marketing Partners</a> at the contact information provided, including via automated dialing, prerecorded/artificial voice, or SMS, even if listed on a Do Not Call registry. Consent is not required to purchase. Message frequency varies; message and data rates may apply. Reply STOP to opt out or HELP for help. Disputes will be resolved through individual binding arbitration only.
-        </div>
+        </div></form>
       `;
       optionsEl.appendChild(form);
 
@@ -1861,29 +1815,24 @@
         }
         e.target.value = formatted;
         e.target.style.borderColor = '';
-        document.getElementById('phone-error').style.display = 'none';
       });
 
-      // Clear errors on name and email when user types
-      document.getElementById('fld-name').addEventListener('input', () => {
-        document.getElementById('fld-name').style.borderColor = '';
-        document.getElementById('name-error').style.display = 'none';
-      });
-      document.getElementById('fld-email').addEventListener('input', () => {
-        document.getElementById('fld-email').style.borderColor = '';
-        document.getElementById('email-error').style.display = 'none';
-      });
+      // Enable/disable submit button based on all three fields having valid input
+      const nameEl = document.getElementById('fld-name');
+      const emailEl = document.getElementById('fld-email');
+      const submitBtn = document.getElementById('submit-contact');
 
-      // Intercept Enter key on all contact fields — prevents any parent <form>
-      // (including forms injected by TrustedForm) from doing a native submit.
-      ['fld-name', 'fld-email', 'fld-phone'].forEach(id => {
-        document.getElementById(id).addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('submit-contact').click();
-          }
-        });
-      });
+      function checkFormReady() {
+        const hasName = nameEl.value.trim().length > 0;
+        const hasEmail = emailEl.value.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim());
+        const phoneDigits = phoneEl.value.replace(/\D/g, '');
+        const hasPhone = phoneDigits.length === 10;
+        submitBtn.disabled = !(hasName && hasEmail && hasPhone);
+      }
+
+      nameEl.addEventListener('input', () => { nameEl.style.borderColor = ''; checkFormReady(); });
+      emailEl.addEventListener('input', () => { emailEl.style.borderColor = ''; checkFormReady(); });
+      phoneEl.addEventListener('input', checkFormReady);
 
       // Validator: must be 10 digits, US format, not an obvious fake
       function isValidUSPhone(raw) {
@@ -1919,66 +1868,14 @@
         const email = document.getElementById('fld-email').value.trim();
         const phoneRaw = document.getElementById('fld-phone').value.trim();
         const phoneValid = isValidUSPhone(phoneRaw);
-
-        // Clear all previous errors
-        ['name','email','phone'].forEach(f => {
-          document.getElementById('fld-' + f).style.borderColor = '';
-          document.getElementById(f + '-error').style.display = 'none';
-        });
-
-        function showFieldError(field, msg) {
-          document.getElementById('fld-' + field).style.borderColor = 'var(--red)';
-          const errEl = document.getElementById(field + '-error');
-          errEl.textContent = msg;
-          errEl.style.display = 'block';
-        }
-
-        // Email validation: real format + reject obvious fakes
-        function isValidEmail(em) {
-          // Basic format check
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return false;
-          // Reject obvious placeholder/fake patterns
-          const lower = em.toLowerCase();
-          const fakeLocalParts = ['test','testing','fake','none','noemail','no','na','n/a','nope','aaa','bbb','xxx','asdf','qwerty','abc','1234','example','user','admin','sample','placeholder'];
-          const localPart = lower.split('@')[0];
-          if (fakeLocalParts.includes(localPart)) return false;
-          // Reject if domain is clearly fake
-          const domain = lower.split('@')[1];
-          const fakeDomains = ['test.com','fake.com','none.com','no.com','na.com','noemail.com','example.com','aaa.com','bbb.com','xxx.com','asdf.com','qwerty.com','mailinator.com','guerrillamail.com','tempmail.com','throwaway.email','yopmail.com'];
-          if (fakeDomains.includes(domain)) return false;
-          // Reject all-same-character local parts (aaa, 111, etc.)
-          if (/^(.)\1+$/.test(localPart)) return false;
-          return true;
-        }
-
-        let hasError = false;
-
-        if (!name || name.length < 2) {
-          showFieldError('name', 'Please enter your full name.');
-          hasError = true;
-        }
-        if (!email) {
-          showFieldError('email', 'Please enter your email address.');
-          hasError = true;
-        } else if (!isValidEmail(email)) {
-          showFieldError('email', 'Please enter a valid email address.');
-          hasError = true;
-        }
-        if (!phoneRaw) {
-          showFieldError('phone', 'Please enter your phone number.');
-          hasError = true;
-        } else if (!phoneValid) {
-          showFieldError('phone', 'Please enter a valid 10-digit US phone number.');
-          hasError = true;
-        }
-
-        if (hasError) {
-          // Scroll the first error field into view so the user sees the prompt
-          var firstErrInput = document.querySelector('#fld-name[style*="border-color"], #fld-email[style*="border-color"], #fld-phone[style*="border-color"]');
-          if (firstErrInput) firstErrInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        if (!name || !email || !phoneRaw || !phoneValid) {
+          if (!name) document.getElementById('fld-name').style.borderColor = 'var(--red)';
+          if (!email) document.getElementById('fld-email').style.borderColor = 'var(--red)';
+          if (!phoneRaw || !phoneValid) {
+            document.getElementById('fld-phone').style.borderColor = 'var(--red)';
+          }
           return;
         }
-
         const phoneDigits = phoneRaw.replace(/\D/g, '');
         state.answers.contact = { name, email, phone: phoneDigits };
 
@@ -2367,16 +2264,6 @@
       new Date().getTime() + Math.random();
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(tf, s);
   })();
-
-  // TrustedForm injects hidden fields into any <form> it finds (or creates).
-  // Since this page uses fetch() for lead posting (no native form submission),
-  // we must block any accidental native form submits — which would reload the
-  // page, serialize TrustedForm's hidden fields as GET params, and reset the
-  // quiz back to the intro screen.
-  document.addEventListener('submit', function(e) {
-    e.preventDefault();
-    return false;
-  }, true); // 'true' = capture phase, fires before any other handler
 </script>
 <noscript>
   <img src='https://api.trustedform.com/ns.gif' />
