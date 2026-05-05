@@ -56,6 +56,52 @@
 /></noscript>
 <!-- End Meta Pixel Code -->
 
+<!-- ========== FORM-SUBMIT SHIELD ==========
+     This page uses fetch() for lead posting — no native <form> submission
+     should ever happen. TrustedForm's async script injects <form> wrappers
+     and hidden inputs; if a native submit fires (Enter key, implicit
+     submit, etc.) the browser serializes those fields as GET params and
+     reloads the page, breaking the quiz. This shield blocks that globally.
+     ========================================== -->
+<script>
+(function() {
+  // 1. Block every native form submission at the capture phase
+  document.addEventListener('submit', function(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return false;
+  }, true);
+
+  // 2. Watch for any <form> elements TrustedForm (or anything else)
+  //    injects into the DOM and neuter them so they can never submit.
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+      m.addedNodes.forEach(function(node) {
+        if (node.nodeType === 1) {
+          // If the added node IS a <form>, neuter it
+          if (node.tagName === 'FORM') {
+            node.addEventListener('submit', function(e) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+            }, true);
+          }
+          // If the added node CONTAINS <form> children, neuter those too
+          if (node.querySelectorAll) {
+            node.querySelectorAll('form').forEach(function(f) {
+              f.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+              }, true);
+            });
+          }
+        }
+      });
+    });
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+
 <style>
   :root {
     --navy: #091b4a;
@@ -1926,7 +1972,12 @@
           hasError = true;
         }
 
-        if (hasError) return;
+        if (hasError) {
+          // Scroll the first error field into view so the user sees the prompt
+          var firstErrInput = document.querySelector('#fld-name[style*="border-color"], #fld-email[style*="border-color"], #fld-phone[style*="border-color"]');
+          if (firstErrInput) firstErrInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          return;
+        }
 
         const phoneDigits = phoneRaw.replace(/\D/g, '');
         state.answers.contact = { name, email, phone: phoneDigits };
